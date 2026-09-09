@@ -38,12 +38,6 @@
                 <button id="show-load-game-btn" class="btn btn-secondary w-full">Wczytaj Grę</button>
             </div>
             <button id="show-stats-btn" class="btn btn-secondary w-full">Pokaż Statystyki</button>
-
-            <!-- SEKCJA 5 OSTATNICH GIER -->
-            <div id="recent-games-section" class="mt-4 pt-3 border-t border-emerald-900/40 hidden">
-                <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider text-center mb-2.5">Ostatnie 5 Gier</h3>
-                <div id="recent-games-list" class="space-y-2"></div>
-            </div>
         </div>
 
         <!-- EKRAN WCZYTYWANIA GRY -->
@@ -101,7 +95,16 @@
         <!-- EKRAN STATYSTYK -->
         <div id="stats-screen" class="hidden card space-y-4">
             <h2 class="text-base font-bold text-emerald-400 text-center uppercase tracking-wider">Statystyki Gier</h2>
-            <div id="stats-summary" class="text-center bg-emerald-950/60 border border-emerald-800/40 p-4 rounded-xl"></div>
+            
+            <!-- Podsumowanie wygranych -->
+            <div id="stats-summary" class="bg-emerald-950/60 border border-emerald-800/40 p-4 rounded-xl"></div>
+            
+            <!-- TABELA 5 OSTATNICH GIER -->
+            <div id="recent-games-section" class="bg-emerald-950/60 border border-emerald-800/40 p-3 rounded-xl hidden space-y-2">
+                <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider text-center">Ostatnie 5 Gier</h3>
+                <div id="recent-games-list" class="overflow-x-auto"></div>
+            </div>
+
             <button id="back-from-stats-btn" class="btn btn-primary w-full">Wróć</button>
         </div>
 

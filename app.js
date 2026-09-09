@@ -125,7 +125,6 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Nasłuchiwanie zmian na żywo
 function enableLiveSync() {
     if (!savedGameStateRef) return; 
     
@@ -134,7 +133,6 @@ function enableLiveSync() {
     }
 
     unsubscribeLiveSync = savedGameStateRef.onSnapshot((doc) => {
-        // Jeśli dokument został usunięty w chmurze (np. druga osoba zakończyła lub usunęła grę)
         if (!doc.exists) {
             if (gameState.isActive) {
                 resetGame();
@@ -233,7 +231,7 @@ async function handleDeleteSavedGame() {
     }); 
 }
 
-// --- Pobieranie i renderowanie 5 ostatnich gier ---
+// --- Kompaktowa Tabela 5 Ostatnich Gier w Statystykach ---
 
 async function loadRecentGames() {
     const recentContainer = document.getElementById('recent-games-section');
@@ -251,42 +249,47 @@ async function loadRecentGames() {
             return;
         }
 
-        let html = '';
+        let tableHtml = `
+            <table class="w-full text-xs text-left text-emerald-100 border-collapse">
+                <thead>
+                    <tr class="border-b border-emerald-800/60 text-emerald-400 text-[10px] uppercase">
+                        <th class="py-1.5 px-1 font-bold">Data</th>
+                        <th class="py-1.5 px-1 font-bold">Wygrany</th>
+                        <th class="py-1.5 px-1 font-bold text-center">Rundy</th>
+                        <th class="py-1.5 px-1 font-bold">Wyniki</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-emerald-900/40">
+        `;
+
         snapshot.forEach(doc => {
             const data = doc.data();
-            const playersStr = data.players ? data.players.map(p => `${p.name}: ${p.score} pkt`).join(' | ') : '';
-            const winnerStr = data.winner ? `🏆 <strong>${data.winner}</strong>` : '';
+            const playersStr = data.players ? data.players.map(p => `${p.name}: ${p.score}`).join(', ') : '';
             
-            // Formatowanie daty i godziny
-            let dateFormatted = '';
+            let dateFormatted = '-';
             if (data.date && typeof data.date.toDate === 'function') {
                 const d = data.date.toDate();
                 dateFormatted = d.toLocaleString('pl-PL', {
                     day: '2-digit',
                     month: '2-digit',
-                    year: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
                 });
             }
 
-            const metaStr = [
-                data.rounds ? `${data.rounds} rund` : null,
-                dateFormatted || null
-            ].filter(Boolean).join(' • ');
-
-            html += `
-                <div class="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-900/50 flex flex-col gap-1 text-left">
-                    <div class="flex justify-between items-center text-xs text-emerald-300">
-                        <span>${winnerStr}</span>
-                        <span class="text-[10px] text-emerald-500/80 font-medium">${metaStr}</span>
-                    </div>
-                    <div class="text-[11px] text-emerald-200/70 truncate">${playersStr}</div>
-                </div>
+            tableHtml += `
+                <tr class="hover:bg-emerald-900/20">
+                    <td class="py-2 px-1 text-[10px] whitespace-nowrap text-emerald-400/80">${dateFormatted}</td>
+                    <td class="py-2 px-1 font-bold text-amber-300 whitespace-nowrap">🏆 ${data.winner || '-'}</td>
+                    <td class="py-2 px-1 text-center font-semibold text-emerald-300">${data.rounds || '-'}</td>
+                    <td class="py-2 px-1 text-[11px] text-emerald-200/80">${playersStr}</td>
+                </tr>
             `;
         });
 
-        recentList.innerHTML = html;
+        tableHtml += `</tbody></table>`;
+
+        recentList.innerHTML = tableHtml;
         recentContainer.classList.remove('hidden');
     } catch (e) {
         console.error("Błąd pobierania ostatnich gier:", e);
@@ -402,7 +405,6 @@ function resetGame() {
     loadGameScreen.classList.add('hidden'); 
     setupScreen.classList.remove('hidden'); 
     generatePlayerNameInputs(); 
-    loadRecentGames();
 }
 
 function clearGameState(fullClear = true) {
@@ -423,7 +425,7 @@ function clearGameState(fullClear = true) {
     if (chartToggleIcon) chartToggleIcon.textContent = '▼';
 }
 
-// --- Rysowanie Wykresów ---
+// --- Wykresy ---
 
 function updateGameChart() {
     if (gameState.history.length === 0) {
@@ -891,10 +893,10 @@ async function getStatsFromFirebase() {
 async function showStats() { 
     const stats = await getStatsFromFirebase(); 
     const totalGames = Object.values(stats.playerWins).reduce((sum, current) => sum + current, 0); 
-    let summaryHtml = `<p class="text-base text-emerald-100">Zagrano łącznie: <span class="font-black text-emerald-400">${totalGames}</span> gier</p>`; 
+    let summaryHtml = `<p class="text-base text-emerald-100 text-center">Zagrano łącznie: <span class="font-black text-emerald-400">${totalGames}</span> gier</p>`; 
     const sortedWins = Object.entries(stats.playerWins).sort(([, a], [, b]) => b - a); 
     if (sortedWins.length > 0) { 
-        summaryHtml += `<h4 class="mt-4 mb-2 font-bold text-xs uppercase tracking-wider text-emerald-300">Ranking zwycięstw:</h4>`; 
+        summaryHtml += `<h4 class="mt-4 mb-2 font-bold text-xs uppercase tracking-wider text-emerald-300 text-center">Ranking zwycięstw</h4>`; 
         summaryHtml += `<div class="space-y-1.5 text-sm">`; 
         sortedWins.forEach(([name, wins]) => { 
             const winPercentage = totalGames > 0 ? ((wins / totalGames) * 100).toFixed(2) : '0.00'; 
@@ -902,9 +904,13 @@ async function showStats() {
         }); 
         summaryHtml += `</div>`; 
     } else { 
-        summaryHtml += `<p class="mt-3 text-sm text-emerald-300/60">Brak zapisanych gier w rankingu.</p>`; 
+        summaryHtml += `<p class="mt-3 text-sm text-emerald-300/60 text-center">Brak zapisanych gier w rankingu.</p>`; 
     } 
     statsSummary.innerHTML = summaryHtml; 
+
+    // Pobranie tabeli z 5 ostatnimi grami
+    await loadRecentGames();
+
     setupScreen.classList.add('hidden'); 
     gameScreen.classList.add('hidden'); 
     statsScreen.classList.remove('hidden'); 
@@ -935,7 +941,6 @@ function initializeApp() {
     if (!tryToLoadGameFromLocalStorage()) {
         generatePlayerNameInputs();
         updateGameChart(); 
-        loadRecentGames();
     }
 }
 initializeApp();
