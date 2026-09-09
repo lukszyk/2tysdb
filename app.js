@@ -257,11 +257,29 @@ async function loadRecentGames() {
             const playersStr = data.players ? data.players.map(p => `${p.name}: ${p.score} pkt`).join(' | ') : '';
             const winnerStr = data.winner ? `🏆 <strong>${data.winner}</strong>` : '';
             
+            // Formatowanie daty i godziny
+            let dateFormatted = '';
+            if (data.date && typeof data.date.toDate === 'function') {
+                const d = data.date.toDate();
+                dateFormatted = d.toLocaleString('pl-PL', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            const metaStr = [
+                data.rounds ? `${data.rounds} rund` : null,
+                dateFormatted || null
+            ].filter(Boolean).join(' • ');
+
             html += `
                 <div class="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-900/50 flex flex-col gap-1 text-left">
                     <div class="flex justify-between items-center text-xs text-emerald-300">
                         <span>${winnerStr}</span>
-                        <span class="text-[10px] text-emerald-500/80 font-medium">${data.rounds || '?'} rund</span>
+                        <span class="text-[10px] text-emerald-500/80 font-medium">${metaStr}</span>
                     </div>
                     <div class="text-[11px] text-emerald-200/70 truncate">${playersStr}</div>
                 </div>
