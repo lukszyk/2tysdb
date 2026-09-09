@@ -142,6 +142,30 @@ function enableLiveSync() {
         }
 
         const remoteData = doc.data();
+
+        // 1. ZABEZPIECZENIE: Jeśli historia rund jest identyczna, to tylko potwierdzenie serwera (server ack).
+        // Ignorujemy to zdarzenie, aby nie przeszkadzać w pisaniu!
+        if (gameState.isActive && 
+            remoteData.history && 
+            gameState.history && 
+            JSON.stringify(remoteData.history) === JSON.stringify(gameState.history)) {
+            return; 
+        }
+
+        // 2. ZABEZPIECZENIE: Zapamiętaj co użytkownik wpisuje w tym momencie w pola
+        const currentInputs = [];
+        let activeInputIndex = null;
+        gameState.players.forEach((_, i) => {
+            const input = document.getElementById(`score-input-${i}`);
+            if (input) {
+                currentInputs[i] = input.value;
+                if (document.activeElement === input) {
+                    activeInputIndex = i;
+                }
+            }
+        });
+
+        // Aktualizacja stanu
         gameState = remoteData;
         gameState.isActive = true;
         gameState.loadedFromFirebase = true;
@@ -149,6 +173,20 @@ function enableLiveSync() {
         renderGameScreen(); 
         saveGameStateToLocalStorage(); 
         updateGameChart(); 
+
+        // Przywróć wpisane wartości i kursor na aktywne pole
+        currentInputs.forEach((val, i) => {
+            const input = document.getElementById(`score-input-${i}`);
+            if (input && val !== '') {
+                input.value = val;
+                input.classList.add('input-filled');
+            }
+        });
+        
+        if (activeInputIndex !== null) {
+            document.getElementById(`score-input-${activeInputIndex}`)?.focus();
+        }
+
         checkWinner();
     }, (error) => {
         console.error("Błąd synchronizacji na żywo:", error);
