@@ -607,38 +607,59 @@ function handleInputKeydown(e) {
 
 function renderGameScreen() { 
     scoreboard.innerHTML = ''; 
-    scoreInputs.innerHTML = ''; 
+    
+    // Sprawdzamy, czy pola do wpisywania wyników są już zbudowane.
+    // Zapobiega to ich czyszczeniu, gdy w tle działa synchronizacja Firebase.
+    const needToRebuildInputs = scoreInputs.children.length !== gameState.players.length;
+
+    if (needToRebuildInputs) {
+        scoreInputs.innerHTML = '';
+    }
+
     gameState.players.forEach((player, i) => { 
+        // Generowanie tablicy wyników (scoreboard)
         const scoreCard = document.createElement('div'); 
         scoreCard.className = 'card text-center p-2.5'; 
         scoreCard.innerHTML = `<div id="player-name-${i}" class="text-xs font-bold text-emerald-200/80 flex items-center justify-center gap-1"></div><div id="player-score-${i}" class="text-2xl sm:text-3xl font-black mt-0.5 ${player.score >= 800 ? 'score-danger' : 'text-emerald-400'}">${player.score}</div>`; 
         scoreboard.appendChild(scoreCard); 
         
-        const inputContainer = document.createElement('div'); 
-        const label = document.createElement('label'); 
-        label.setAttribute('for', `score-input-${i}`); 
-        label.className = 'block mb-1 text-xs font-bold text-emerald-300/80 truncate'; 
-        label.textContent = player.name; 
-        
-        const inputElement = document.createElement('input'); 
-        inputElement.type = 'number'; 
-        inputElement.id = `score-input-${i}`; 
-        inputElement.className = 'input-field text-center font-bold text-base'; 
-        inputElement.placeholder = '0'; 
-        inputElement.dataset.playerIndex = i; 
-        inputElement.addEventListener('keydown', handleInputKeydown); 
-        inputElement.addEventListener('input', (e) => { e.target.classList.toggle('input-filled', e.target.value.trim() !== ''); }); 
-        
-        inputContainer.appendChild(label); 
-        inputContainer.appendChild(inputElement); 
-        scoreInputs.appendChild(inputContainer); 
+        // Tworzenie pól do wpisywania tylko przy starcie/zmianie liczby graczy
+        if (needToRebuildInputs) {
+            const inputContainer = document.createElement('div'); 
+            const label = document.createElement('label'); 
+            label.setAttribute('for', `score-input-${i}`); 
+            label.className = 'block mb-1 text-xs font-bold text-emerald-300/80 truncate'; 
+            label.textContent = player.name; 
+            
+            const inputElement = document.createElement('input'); 
+            inputElement.type = 'number'; 
+            inputElement.id = `score-input-${i}`; 
+            inputElement.className = 'input-field text-center font-bold text-base'; 
+            inputElement.placeholder = '0'; 
+            inputElement.dataset.playerIndex = i; 
+            inputElement.addEventListener('keydown', handleInputKeydown); 
+            inputElement.addEventListener('input', (e) => { e.target.classList.toggle('input-filled', e.target.value.trim() !== ''); }); 
+            
+            inputContainer.appendChild(label); 
+            inputContainer.appendChild(inputElement); 
+            scoreInputs.appendChild(inputContainer); 
+        } else {
+            // Aktualizacja etykiety imienia, jeśli pola już istnieją
+            const label = scoreInputs.children[i]?.querySelector('label');
+            if (label) label.textContent = player.name;
+        }
     }); 
+
     updateScoreValues(); 
     updateFirstPlayerMarker(); 
     renderRoundHistory(); 
     renderRoundInfo(); 
     updateGameChart(); 
-    document.getElementById('score-input-0')?.focus(); 
+    
+    // Daj focus na pierwsze pole tylko przy pierwszym ładowaniu ekranu
+    if (needToRebuildInputs && document.activeElement?.tagName !== 'INPUT') {
+        document.getElementById('score-input-0')?.focus(); 
+    }
 }
 
 function updateScoreValues() { 
