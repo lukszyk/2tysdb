@@ -1022,6 +1022,8 @@ chartToggleBtn?.addEventListener('click', toggleGameChart);
 
 // --- Inicjalizacja ---
 function initializeApp() {
+    if (saveGameBtn) saveGameBtn.style.display = 'none'; // Ukrywa przycisk na starcie
+
     if (!tryToLoadGameFromLocalStorage()) {
         generatePlayerNameInputs();
         updateGameChart(); 
