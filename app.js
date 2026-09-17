@@ -58,7 +58,7 @@ const loadGameMessage = document.getElementById('load-game-message');
 const loadGameBtn = document.getElementById('load-game-btn');
 const deleteGameBtn = document.getElementById('delete-game-btn');
 const backFromLoadBtn = document.getElementById('back-from-load-btn');
-const saveGameBtn = document.getElementById('save-game-btn');
+// const saveGameBtn = document.getElementById('save-game-btn');
 const saveAndEndBtn = document.getElementById('save-and-end-btn');
 const correctLastRoundBtn = document.getElementById('correct-last-round-btn');
 
@@ -1019,7 +1019,7 @@ showLoadGameBtn.addEventListener('click', handleShowLoadScreen);
 backFromLoadBtn.addEventListener('click', () => { loadGameScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); });
 loadGameBtn.addEventListener('click', loadGameStateFromFirebase);
 deleteGameBtn.addEventListener('click', handleDeleteSavedGame);
-saveGameBtn.addEventListener('click', () => saveCurrentGameState(true));
+// saveGameBtn.addEventListener('click', () => saveCurrentGameState(true));
 showStatsBtn.addEventListener('click', showStats);
 gameToStatsBtn.addEventListener('click', showStats);
 backFromStatsBtn.addEventListener('click', handleBackFromStats);
