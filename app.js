@@ -271,15 +271,19 @@ async function handleDeleteSavedGame() {
 
 // --- Kompaktowa Tabela 5 Ostatnich Gier w Statystykach ---
 
+// Zmienna kontrolująca rozwijanie listy (umieść przed funkcją lub na początku sekcji)
+let showAllRecentGames = false;
+
 async function loadRecentGames() {
     const recentContainer = document.getElementById('recent-games-section');
     const recentList = document.getElementById('recent-games-list');
     if (!db || !recentContainer || !recentList) return;
 
     try {
+        // Pobieramy do 50 ostatnich gier z bazy
         const snapshot = await db.collection(FIREBASE_COLLECTION_RECENT)
             .orderBy('date', 'desc')
-            .limit(5)
+            .limit(50)
             .get();
 
         if (snapshot.empty) {
@@ -287,23 +291,41 @@ async function loadRecentGames() {
             return;
         }
 
+        const allDocs = snapshot.docs;
+        // Pokazujemy 10 gier lub wszystkie po kliknięciu przycisku
+        const docsToDisplay = showAllRecentGames ? allDocs : allDocs.slice(0, 10);
+
         let tableHtml = `
             <table class="w-full text-xs text-left text-emerald-100 border-collapse">
                 <thead>
                     <tr class="border-b border-emerald-800/60 text-emerald-400 text-[10px] uppercase">
                         <th class="py-1.5 px-1 font-bold">Data</th>
-                        <th class="py-1.5 px-1 font-bold">Wygrany</th>
+                        <th class="py-1.5 px-1 font-bold">Gracze i Wyniki</th>
                         <th class="py-1.5 px-1 font-bold text-center">Rundy</th>
-                        <th class="py-1.5 px-1 font-bold">Wyniki</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-emerald-900/40">
         `;
 
-        snapshot.forEach(doc => {
+        docsToDisplay.forEach(doc => {
             const data = doc.data();
-            const playersStr = data.players ? data.players.map(p => `${p.name}: ${p.score}`).join(', ') : '';
             
+            // Sortowanie graczy według punktów (zwycięzca z najniższą/najwyższą liczbą punktów na górze)
+            let sortedPlayers = [];
+            if (Array.isArray(data.players)) {
+                sortedPlayers = [...data.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+            }
+
+            // Generowanie listy graczy — pierwszy na liście jest wygrany (otrzymuje puchar)
+            const playersFormatted = sortedPlayers.map((p, idx) => {
+                const isWinner = idx === 0;
+                return `
+                    <div class="${isWinner ? 'font-bold text-amber-300' : 'text-emerald-200/70'}">
+                        ${isWinner ? '🏆 ' : ''}${p.name}: <span class="font-semibold">${p.score} pkt</span>
+                    </div>
+                `;
+            }).join('');
+
             let dateFormatted = '-';
             if (data.date && typeof data.date.toDate === 'function') {
                 const d = data.date.toDate();
@@ -316,24 +338,41 @@ async function loadRecentGames() {
             }
 
             tableHtml += `
-                <tr class="hover:bg-emerald-900/20">
+                <tr class="hover:bg-emerald-900/20 align-top">
                     <td class="py-2 px-1 text-[10px] whitespace-nowrap text-emerald-400/80">${dateFormatted}</td>
-                    <td class="py-2 px-1 font-bold text-amber-300 whitespace-nowrap">🏆 ${data.winner || '-'}</td>
+                    <td class="py-2 px-1 text-[11px]">${playersFormatted}</td>
                     <td class="py-2 px-1 text-center font-semibold text-emerald-300">${data.rounds || '-'}</td>
-                    <td class="py-2 px-1 text-[11px] text-emerald-200/80">${playersStr}</td>
                 </tr>
             `;
         });
 
         tableHtml += `</tbody></table>`;
 
+        // Przycisk "Pokaż wszystkie", jeśli w bazie jest więcej niż 10 gier
+        if (allDocs.length > 10 && !showAllRecentGames) {
+            tableHtml += `
+                <button id="show-more-games-btn" class="w-full py-2 mt-3 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 rounded-xl hover:bg-emerald-900/50 transition">
+                    Pokaż wszystkie (${allDocs.length})
+                </button>
+            `;
+        }
+
         recentList.innerHTML = tableHtml;
         recentContainer.classList.remove('hidden');
+
+        // Obsługa kliknięcia przycisku
+        const showMoreBtn = document.getElementById('show-more-games-btn');
+        if (showMoreBtn) {
+            showMoreBtn.onclick = () => {
+                showAllRecentGames = true;
+                loadRecentGames();
+            };
+        }
+
     } catch (e) {
         console.error("Błąd pobierania ostatnich gier:", e);
     }
 }
-
 // --- Logika Gry ---
 
 function addRoundScore() {
