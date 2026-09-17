@@ -58,7 +58,7 @@ const loadGameMessage = document.getElementById('load-game-message');
 const loadGameBtn = document.getElementById('load-game-btn');
 const deleteGameBtn = document.getElementById('delete-game-btn');
 const backFromLoadBtn = document.getElementById('back-from-load-btn');
-// const saveGameBtn = document.getElementById('save-game-btn');
+const saveGameBtn = document.getElementById('save-game-btn');
 const saveAndEndBtn = document.getElementById('save-and-end-btn');
 const correctLastRoundBtn = document.getElementById('correct-last-round-btn');
 
@@ -143,8 +143,6 @@ function enableLiveSync() {
 
         const remoteData = doc.data();
 
-        // 1. ZABEZPIECZENIE: Jeśli historia rund jest identyczna, to tylko potwierdzenie serwera (server ack).
-        // Ignorujemy to zdarzenie, aby nie przeszkadzać w pisaniu!
         if (gameState.isActive && 
             remoteData.history && 
             gameState.history && 
@@ -152,7 +150,6 @@ function enableLiveSync() {
             return; 
         }
 
-        // 2. ZABEZPIECZENIE: Zapamiętaj co użytkownik wpisuje w tym momencie w pola
         const currentInputs = [];
         let activeInputIndex = null;
         gameState.players.forEach((_, i) => {
@@ -165,7 +162,6 @@ function enableLiveSync() {
             }
         });
 
-        // Aktualizacja stanu
         gameState = remoteData;
         gameState.isActive = true;
         gameState.loadedFromFirebase = true;
@@ -174,7 +170,6 @@ function enableLiveSync() {
         saveGameStateToLocalStorage(); 
         updateGameChart(); 
 
-        // Przywróć wpisane wartości i kursor na aktywne pole
         currentInputs.forEach((val, i) => {
             const input = document.getElementById(`score-input-${i}`);
             if (input && val !== '') {
@@ -269,9 +264,8 @@ async function handleDeleteSavedGame() {
     }); 
 }
 
-// --- Kompaktowa Tabela 5 Ostatnich Gier w Statystykach ---
+// --- Kompaktowa Tabela Ostatnich Gier w Statystykach ---
 
-// Zmienna kontrolująca rozwijanie listy (umieść przed funkcją lub na początku sekcji)
 let showAllRecentGames = false;
 
 async function loadRecentGames() {
@@ -280,7 +274,6 @@ async function loadRecentGames() {
     if (!db || !recentContainer || !recentList) return;
 
     try {
-        // Pobieramy do 50 ostatnich gier z bazy
         const snapshot = await db.collection(FIREBASE_COLLECTION_RECENT)
             .orderBy('date', 'desc')
             .limit(50)
@@ -292,7 +285,6 @@ async function loadRecentGames() {
         }
 
         const allDocs = snapshot.docs;
-        // Pokazujemy 10 gier lub wszystkie po kliknięciu przycisku
         const docsToDisplay = showAllRecentGames ? allDocs : allDocs.slice(0, 10);
 
         let tableHtml = `
@@ -310,13 +302,11 @@ async function loadRecentGames() {
         docsToDisplay.forEach(doc => {
             const data = doc.data();
             
-            // Sortowanie graczy według punktów (zwycięzca z najniższą/najwyższą liczbą punktów na górze)
             let sortedPlayers = [];
             if (Array.isArray(data.players)) {
                 sortedPlayers = [...data.players].sort((a, b) => (b.score || 0) - (a.score || 0));
             }
 
-            // Generowanie listy graczy — pierwszy na liście jest wygrany (otrzymuje puchar)
             const playersFormatted = sortedPlayers.map((p, idx) => {
                 const isWinner = idx === 0;
                 return `
@@ -348,7 +338,6 @@ async function loadRecentGames() {
 
         tableHtml += `</tbody></table>`;
 
-        // Przycisk "Pokaż wszystkie", jeśli w bazie jest więcej niż 10 gier
         if (allDocs.length > 10 && !showAllRecentGames) {
             tableHtml += `
                 <button id="show-more-games-btn" class="w-full py-2 mt-3 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 rounded-xl hover:bg-emerald-900/50 transition">
@@ -360,7 +349,6 @@ async function loadRecentGames() {
         recentList.innerHTML = tableHtml;
         recentContainer.classList.remove('hidden');
 
-        // Obsługa kliknięcia przycisku
         const showMoreBtn = document.getElementById('show-more-games-btn');
         if (showMoreBtn) {
             showMoreBtn.onclick = () => {
@@ -373,6 +361,7 @@ async function loadRecentGames() {
         console.error("Błąd pobierania ostatnich gier:", e);
     }
 }
+
 // --- Logika Gry ---
 
 function addRoundScore() {
@@ -416,7 +405,7 @@ function addRoundScore() {
         gameState.firstPlayerIndex = gameState.history.length % 2 !== 0 ? (gameState.initialFirstPlayerIndex + 1) % 2 : gameState.initialFirstPlayerIndex; 
     } else { 
         gameState.firstPlayerIndex = (gameState.firstPlayerIndex + 1) % gameState.players.length; 
-    }
+    } 
     
     updateScoreValues(); 
     updateFirstPlayerMarker(); 
@@ -436,7 +425,7 @@ function addRoundScore() {
         if (roundingOccurred) showTemporaryMessage('Wynik dodatni został zaokrąglony do najbliższej 10-tki.', false);
         renderRoundInfo(); 
         document.getElementById('score-input-0')?.focus();
-        if (gameState.history.length > 0) { 
+        if (gameState.history.length > 0 && saveGameBtn) { 
             saveGameBtn.disabled = false; 
             saveGameBtn.classList.remove('btn-disabled'); 
         }
@@ -492,8 +481,10 @@ function clearGameState(fullClear = true) {
     gameState = { players: [], history: [], isActive: false, firstPlayerIndex: 0, initialFirstPlayerIndex: 0, loadedFromFirebase: false };
     gameWinnerData = null;
     if (fullClear) { localStorage.removeItem(GAME_STATE_KEY); }
-    saveGameBtn.disabled = true; 
-    saveGameBtn.classList.add('btn-disabled');
+    if (saveGameBtn) {
+        saveGameBtn.disabled = true; 
+        saveGameBtn.classList.add('btn-disabled');
+    }
     if (gameChart) { gameChart.destroy(); gameChart = null; }
     chartContainer.classList.add('hidden');
     chartContent?.classList.add('hidden');
@@ -685,8 +676,6 @@ function handleInputKeydown(e) {
 function renderGameScreen() { 
     scoreboard.innerHTML = ''; 
     
-    // Sprawdzamy, czy pola do wpisywania wyników są już zbudowane.
-    // Zapobiega to ich czyszczeniu, gdy w tle działa synchronizacja Firebase.
     const needToRebuildInputs = scoreInputs.children.length !== gameState.players.length;
 
     if (needToRebuildInputs) {
@@ -694,13 +683,11 @@ function renderGameScreen() {
     }
 
     gameState.players.forEach((player, i) => { 
-        // Generowanie tablicy wyników (scoreboard)
         const scoreCard = document.createElement('div'); 
         scoreCard.className = 'card text-center p-2.5'; 
         scoreCard.innerHTML = `<div id="player-name-${i}" class="text-xs font-bold text-emerald-200/80 flex items-center justify-center gap-1"></div><div id="player-score-${i}" class="text-2xl sm:text-3xl font-black mt-0.5 ${player.score >= 800 ? 'score-danger' : 'text-emerald-400'}">${player.score}</div>`; 
         scoreboard.appendChild(scoreCard); 
         
-        // Tworzenie pól do wpisywania tylko przy starcie/zmianie liczby graczy
         if (needToRebuildInputs) {
             const inputContainer = document.createElement('div'); 
             const label = document.createElement('label'); 
@@ -721,7 +708,6 @@ function renderGameScreen() {
             inputContainer.appendChild(inputElement); 
             scoreInputs.appendChild(inputContainer); 
         } else {
-            // Aktualizacja etykiety imienia, jeśli pola już istnieją
             const label = scoreInputs.children[i]?.querySelector('label');
             if (label) label.textContent = player.name;
         }
@@ -733,7 +719,6 @@ function renderGameScreen() {
     renderRoundInfo(); 
     updateGameChart(); 
     
-    // Daj focus na pierwsze pole tylko przy pierwszym ładowaniu ekranu
     if (needToRebuildInputs && document.activeElement?.tagName !== 'INPUT') {
         document.getElementById('score-input-0')?.focus(); 
     }
@@ -1006,7 +991,6 @@ async function showStats() {
     } 
     statsSummary.innerHTML = summaryHtml; 
 
-    // Pobranie tabeli z 5 ostatnimi grami
     await loadRecentGames();
 
     setupScreen.classList.add('hidden'); 
@@ -1019,7 +1003,9 @@ showLoadGameBtn.addEventListener('click', handleShowLoadScreen);
 backFromLoadBtn.addEventListener('click', () => { loadGameScreen.classList.add('hidden'); setupScreen.classList.remove('hidden'); });
 loadGameBtn.addEventListener('click', loadGameStateFromFirebase);
 deleteGameBtn.addEventListener('click', handleDeleteSavedGame);
-// saveGameBtn.addEventListener('click', () => saveCurrentGameState(true));
+if (saveGameBtn) {
+    saveGameBtn.addEventListener('click', () => saveCurrentGameState(true));
+}
 showStatsBtn.addEventListener('click', showStats);
 gameToStatsBtn.addEventListener('click', showStats);
 backFromStatsBtn.addEventListener('click', handleBackFromStats);
