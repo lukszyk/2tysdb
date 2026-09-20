@@ -122,7 +122,9 @@ input[type=number] { -moz-appearance: textfield; }
 #round-history-container tr { border-bottom: 1px solid rgba(45, 74, 66, 0.3); }
 
 .history-score { font-weight: 700; color: #34d399; }
-.score-danger { color: #fbbf24; text-shadow: 0 0 8px rgba(251, 191, 36, 0.3); }
+.score-danger {
+    color: #f87171 !important; /* Czerwony kolor (Rose 400 z Tailwind) */
+}
 .score-negative { color: #f87171; font-weight: 600; }
 
 .app-footer {
