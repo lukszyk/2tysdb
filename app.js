@@ -848,8 +848,8 @@ function updateFirstPlayerMarker() {
 
         if (nameEl) { 
             const startStar = isStartPlayer 
-                ? '<span class="text-rose-400 font-normal mr-1" title="Rozpoczynający mecz (Runda 1)">★</span>' 
-                : '';
+    ? '<span class="text-cyan-400 font-normal mr-1" title="Rozpoczynający mecz">★</span>' // lub symbol 🎴
+    : '';
 
             const musikBadge = (i === gameState.firstPlayerIndex) 
                 ? '<span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-[7px] w-3.5 h-3.5 rounded-sm font-black uppercase inline-flex items-center justify-center leading-none ml-1 shrink-0" title="Na musiku">M</span>' 
