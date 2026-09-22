@@ -389,12 +389,20 @@ function addRoundScore() {
                 input.focus(); 
                 return; 
             }
-            if (scoreValue > 0) { 
-                let roundedScore = Math.round(scoreValue / 10) * 10; 
-                if (roundedScore !== scoreValue) roundingOccurred = true; 
-                scoreValue = roundedScore; 
-                input.value = scoreValue; 
-            }
+            if (scoreValue > 0) {
+    let remainder = scoreValue % 10;
+    let roundedScore = scoreValue;
+    
+    if (remainder !== 0) {
+        if (remainder <= 5) {
+            roundedScore = scoreValue - remainder; // np. 155 -> 150
+        } else {
+            roundedScore = scoreValue + (10 - remainder); // np. 156 -> 160
+        }
+        roundingOccurred = true;
+    }
+    scoreValue = roundedScore;
+}
         }
         roundScores[player.name] = scoreValue;
     }
