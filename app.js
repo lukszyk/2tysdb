@@ -285,7 +285,7 @@ async function loadRecentGames() {
         }
 
         const allDocs = snapshot.docs;
-        const docsToDisplay = showAllRecentGames ? allDocs : allDocs.slice(0, 10);
+        const docsToDisplay = showAllRecentGames ? allDocs : allDocs.slice(0, 5);
 
         let tableHtml = `
             <table class="w-full text-xs text-left text-emerald-100 border-collapse">
@@ -338,7 +338,7 @@ async function loadRecentGames() {
 
         tableHtml += `</tbody></table>`;
 
-        if (allDocs.length > 10 && !showAllRecentGames) {
+        if (allDocs.length > 5 && !showAllRecentGames) {
             tableHtml += `
                 <button id="show-more-games-btn" class="w-full py-2 mt-3 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 rounded-xl hover:bg-emerald-900/50 transition">
                     Pokaż wszystkie (${allDocs.length})
