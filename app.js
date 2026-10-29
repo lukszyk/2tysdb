@@ -807,7 +807,18 @@ async function startGame() {
     }
 
     clearGameState(true); 
-    gameState = { players, history: [], isActive: true, firstPlayerIndex: 0, initialFirstPlayerIndex: 0, loadedFromFirebase: true }; 
+    
+    // Losowanie indeksu rozpoczynającego gracza (od 0 do liczby graczy - 1)
+    const randomIndex = Math.floor(Math.random() * players.length);
+
+    gameState = { 
+        players, 
+        history: [], 
+        isActive: true, 
+        firstPlayerIndex: randomIndex, 
+        initialFirstPlayerIndex: randomIndex, 
+        loadedFromFirebase: true 
+    };
     
     renderGameScreen(); 
     setupScreen.classList.add('hidden'); 
